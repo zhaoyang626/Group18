@@ -1,0 +1,94 @@
+\documentclass[journal]{IEEEtran}
+
+
+% correct bad hyphenation here
+\hyphenation{op-tical net-works semi-conduc-tor}
+
+
+\begin{document}
+\title{CI-6226 Information Retrieval $\&$ Analysis Report}
+
+
+\author{Michael~Shell,~\IEEEmembership{Member,~IEEE,}
+        John~Doe,~\IEEEmembership{Fellow,~OSA,}
+        and~Jane~Doe,~\IEEEmembership{Life~Fellow,~IEEE}
+}
+
+\maketitle
+
+\begin{abstract}
+Information retrieval is popular among people nowadays. Many people are using the web search engine for acquiring information everyday. Boolean retrieval is the one of the classical information retrieval systems. In this report, we describe the information retrieval system we design and implement in detail. Besides, we also present the core programming and the test results using customized queries.
+\end{abstract}
+
+% Note that keywords are not normally used for peerreview papers.
+\begin{IEEEkeywords}
+Information retrieval, Boolean retrieval
+\end{IEEEkeywords}
+
+
+\IEEEpeerreviewmaketitle
+
+
+
+\section{Introduction}
+%definition
+Information retrieval (IR) is finding documents of text that satisfies an information need from within large collections~\cite{manning2010introduction}. Nowadays, hundreds of millions of people engage in the IR by using a web search engine. The IR system is used to facilitate search information stored in the computer system.
+%Boolean retrieval
+Boolean retrieval model is a classical IR model and many IR systems still use it today. The Boolean retrieval model is a model for information retrieval in which we can pose any query which is in the form of a Boolean expression of terms, that is, in which terms are combined with the operators AND, OR, and NOT. The model views each document as just a set of words. In this project, we design a information retrieval system using the Boolean retrieval. In our information retrieval system, we implement multiple functions including preprocessing tokens, generating posting lists, outputting inverted index, query, etc. 
+
+\textbf{Organization.}~In section \ref{components}, we explain components required for building a information retrieval system. Section \ref{system} presents the information retrieval system functionality. Section \ref{optimization} shows the optimization we tried to optimize the memory and efficiency of our information retrieval system.
+
+\section{Information Retrieval System Components}\label{components}
+\subsection{Tokenization}
+
+\subsection{Linguistic Modules}
+
+The objective of linguistic modules is to pre-process tokens. In this component, we perform two linguistic transformations on tokens: removing all punctuation sysmbols, lowercasing and stemming. In our project, we use the Natural Language Toolkit (NLTK) library to implement the functionality~\cite{Loper02nltk:the}. 
+%nltk intro
+NLTK is a leading platform for building Python programs to work with human language data. It provides easy-to-use interfaces to over 50 corpora and lexical resources such as WordNet, along with a suite of text processing libraries for classification, tokenization, stemming, tagging, parsing, and semantic reasoning.
+
+Tokenization block generates tokens and corresponding document ID for Hillary email contents. However, these tokens should be modified since they include unnecessary punctuations, inconsistent letter cases, and different tenses. Therefore, a modification block is added to the IR system to deal with all these tokens to standardize them.
+The APIs we use in our project including $nltk.word\textunderscore tokenize(token)$, $token.lower()$ and $PorterStemmer().stem(token)$. The implementation is as follows:
+
+Before:
+
+After:
+\subsection{Sorting the Tokens}
+The creation of the list of pairs \textit{(token, document id)} from previous step are usually jumbled in a disorderly manner. To facilitate the creation of a posting list based on the document ID, it is necessary to do a sorting of this list by the tokens followed by the document ID, of the same token.\\
+The naive approach that we have first taken is to call upon an in-built method in python to sort the list. Given by a simple line,
+$$data.sort(key=lambda x:(x[0],x[1]))$$
+This will essentially sort the tokens columns before sorting the document ID column.
+This approach was taken because this in built method $sort()$ in python is based on $Timsort$, a sorting algorithm with worse-case performance of $O(n\,log\,n)$ and worse-case space complexity is $O(n)$. Running this sorting function has a time-taken: $6.1544\,secs$.\\
+Further discussion on alternative methods with the aims of optimizing this token sorting process.
+\vspace{2pt}\\
+%For optimization section
+The first assumption here is the static document collection, and the collections while large but small enough to have index construction done efficiently on a single machine. Thus the optimization of the sorting algorithm can be done by two techniques. Each of these is to prevent the bottleneck due to large amount of random disk seeks, that slows down the sorting algorithm. The first optimization work in sorting is to implement Blocked Sort-Based Indexing (BSBI) algorithm. This algorithm accumulates postings for each block, a smaller set of the main data, then sort and write to disk. Before merging the blocks into one long sorted order. Nonetheless, the amount of data is too little to see the impact on memory usage. Memory index construction does not scale for large data. There will be a need for the dictionary to grows dynamically. A solution is to implement Single-Pass In-Memory Indexing (SPIMI) invert algorithm, that utilises the block structure of BSBI. The implementation of this algorithm would construct a new dictionary structure and eliminate the need for step in sorting of the tokens. Nonetheless, this index block created by SPIMI has to be sorted in lexicographic order to facilitate the merger of blocks in final steps - done by simple linear scan through each block. The time complexity of SPIMI is $\Theta(T)$. In our case, we implemented this SPIMI once, assuming that we only have a block of data - the current documents fit into one block. This help us to eliminate the computation for sorting of tokens step and creating the extra intermediate data structure to store the sorted tokens and document ID.
+\subsection{Transformation into Postings}
+
+\subsection{Postings List Merge Component}
+
+\section{Write an Information Retrieval System}\label{system}
+In this section, we introduce the search functionality in our designed information retrieval system. In secion~\ref{components}, we prepare all required components for building the information retrieval system. The system is able to search information that exists in the Hillary email contents. We separate queries into two kinds: the single word query and multiple words queries. When the search query contains multiple words, we consider the query to be a Boolean AND query.
+
+Before inputting the queries, we lowercase queries and remove all punctuation symbols as we did when preprocessing tokens. When it is a multiple words query, we need to merge postings first. In order to quickly find documents that contain both terms, we need to efficiently intersect postings lists. In the simple way of implementing the Boolean search, we maintain pointers into both lists and walk through the two postings lists simultaneously, in time linear in the total number of posting entries. At each step, we compare the documentID pointed to by both pointers. If they are the same, we put that documentID in the results list, and advance both pointers. Otherwise we advance the pointer pointing to the smaller documentID. 
+
+To make the query using posting lists more efficiently, we use the skip pointer. Skip pointers are effectively shortcuts that allow us to avoid processing parts of the postings list that will not figure in the search results. The postings intersection can use a skip pointer when the end point is still less than the item on the other list. Assume the posting list length is p, the skip is placed every $\sqrt{p}$. In our system, the length of posting list is TBD, and we placed the skip every TBD. 
+
+There is a trade-off in placing skips. More skips means short skip spans, and that we are more likely to skip. But it also means lots of comparisons to skip pointers, and lots of space storing skip pointers. Fewer skips means few pointer comparisons, but then long skip spans which means that there will be fewer opportunities to skip.
+
+\section{Optimization}\label{optimization}
+
+
+\section{Conclusion}
+
+
+
+
+
+\bibliography{bibtex/bib/IEEEabrv.bib,bibtex/bib/IEEEexample.bib}{}
+
+\bibliographystyle{IEEEtran}
+
+\end{document}
+
+
