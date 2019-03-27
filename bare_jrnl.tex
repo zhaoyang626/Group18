@@ -43,16 +43,13 @@ Boolean retrieval model is a classical IR model and many IR systems still use it
 
 \subsection{Linguistic Modules}
 
-The objective of linguistic modules is to pre-process tokens. In this component, we perform two linguistic transformations on tokens: removing all punctuation sysmbols, lowercasing and stemming. In our project, we use the Natural Language Toolkit (NLTK) library to implement the functionality~\cite{Loper02nltk:the}. 
+The objective of linguistic modules is to pre-process tokens. In this component, we perform two linguistic transformations on tokens: removing all punctuation sysmbols, lowercasing and stemming. In our project, we use the Natural Language Toolkit (NLTK) library to implement above functionalities~\cite{Loper02nltk:the}. 
 %nltk intro
 NLTK is a leading platform for building Python programs to work with human language data. It provides easy-to-use interfaces to over 50 corpora and lexical resources such as WordNet, along with a suite of text processing libraries for classification, tokenization, stemming, tagging, parsing, and semantic reasoning.
 
-Tokenization block generates tokens and corresponding document ID for Hillary email contents. However, these tokens should be modified since they include unnecessary punctuations, inconsistent letter cases, and different tenses. Therefore, a modification block is added to the IR system to deal with all these tokens to standardize them.
-The APIs we use in our project including $nltk.word\textunderscore tokenize(token)$, $token.lower()$ and $PorterStemmer().stem(token)$. The implementation is as follows:
+Tokenization block generates tokens and corresponding documentIDs for Hillary email contents. However, these tokens should be modified since they include unnecessary punctuations, inconsistent letter cases, and different tenses. Therefore, a modification block is added to the IR system to deal with all these tokens to standardize them.
+The APIs we use in our project including $nltk.word\textunderscore tokenize(token)$, $token.lower()$ and $PorterStemmer().stem(token)$.
 
-Before:
-
-After:
 \subsection{Sorting the Tokens}
 The creation of the list of pairs \textit{(token, document id)} from previous step are usually jumbled in a disorderly manner. To facilitate the creation of a posting list based on the document ID, it is necessary to do a sorting of this list by the tokens followed by the document ID, of the same token.\\
 The naive approach that we have first taken is to call upon an in-built method in python to sort the list. Given by a simple line,
@@ -66,21 +63,22 @@ The first assumption here is the static document collection, and the collections
 \subsection{Transformation into Postings}
 
 \subsection{Postings List Merge Component}
+To process the query with the inverted index and the basic Boolean retrieval model, we prepare the function $merge \textunderscore posting \textunderscore list(queries, token \textunderscore column, docID \textunderscore column)$. To quickly find documents that contain both terms, we need to efficiently intersect postings lists. In the simple way of implementing the Boolean retrieval, we maintain pointers in both lists and walk through the two postings lists simultaneously, in time linear in the total number of posting entries. At each step, we compare the documentID pointed by both pointers. If they are the same, we put that documentID in the results list, and advance both pointers. Otherwise, we advance the pointer pointing to the smaller documentID. If the lengths of the postings lists are $x$ and $y$, the intersection takes $O(x+y)$ operations.
 
-\section{Write an Information Retrieval System}\label{system}
-In this section, we introduce the search functionality in our designed information retrieval system. In secion~\ref{components}, we prepare all required components for building the information retrieval system. The system is able to search information that exists in the Hillary email contents. We separate queries into two kinds: the single word query and multiple words queries. When the search query contains multiple words, we consider the query to be a Boolean AND query.
-
-Before inputting the queries, we lowercase queries and remove all punctuation symbols as we did when preprocessing tokens. When it is a multiple words query, we need to merge postings first. In order to quickly find documents that contain both terms, we need to efficiently intersect postings lists. In the simple way of implementing the Boolean search, we maintain pointers into both lists and walk through the two postings lists simultaneously, in time linear in the total number of posting entries. At each step, we compare the documentID pointed to by both pointers. If they are the same, we put that documentID in the results list, and advance both pointers. Otherwise we advance the pointer pointing to the smaller documentID. 
-
-To make the query using posting lists more efficiently, we use the skip pointer. Skip pointers are effectively shortcuts that allow us to avoid processing parts of the postings list that will not figure in the search results. The postings intersection can use a skip pointer when the end point is still less than the item on the other list. Assume the posting list length is p, the skip is placed every $\sqrt{p}$. In our system, the length of posting list is TBD, and we placed the skip every TBD. 
+To make the query use posting lists more efficiently, we use the skip pointer. Skip pointers are effectively shortcuts that allow us to avoid processing parts of the postings list that will not figure in the search results. The postings intersection can use a skip pointer when the end point is still less than the item on the other list. Assume the posting list length is p, the skip is placed every $\sqrt{p}$. In our system, the length of posting list is TBD, and we placed the skip every TBD. 
 
 There is a trade-off in placing skips. More skips means short skip spans, and that we are more likely to skip. But it also means lots of comparisons to skip pointers, and lots of space storing skip pointers. Fewer skips means few pointer comparisons, but then long skip spans which means that there will be fewer opportunities to skip.
+
+\section{Write an Information Retrieval System}\label{system}
+In this section, we introduce the search function in our designed information retrieval system. In section~\ref{components}, we prepare all required components for building the information retrieval system. The system is able to search information that exists in the Hillary email contents. We separate queries into two kinds: the single word query and multiple words queries. When the search query contains multiple words, we consider the query to be a Boolean AND query.
+
+Before inputting the queries, we lowercase queries and remove all punctuation symbols as we did when preprocessing tokens. We put queries in a file $query.csv$, and consider the file as the input parameter of the search function. Besides, we also need to input the posting list and the location for the query result output. We write the search function as $search(posting \textunderscore list, query, query \textunderscore result)$. The search function will go through queries in the $query.csv$ one by one. 
 
 \section{Optimization}\label{optimization}
 
 
 \section{Conclusion}
-
+In this report, we present the information retrieval system we design and implement in detail. We describe the technology we choose to make the IR system, why we choose it and how it can help us achieve the goal.
 
 
 
